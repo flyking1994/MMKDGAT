@@ -136,48 +136,6 @@ class Dataset(object):
         self.test_matrix = csr_matrix((test_ratings, (test_data["user"], test_data["item"])),
                                       shape=(self.num_users, self.num_items))
 
-        assert not self.sparsity or not self.mask
-        # drop edge
-        if self.sparsity:
-            users, items = list(), list()
-            user_pos_train = self.get_user_train_dict()
-            for user, pos_items in user_pos_train.items():
-                if self.sparsity_ratio < 1.:
-                    pos_items = np.random.choice(pos_items, size=int(len(pos_items) * self.sparsity_ratio), replace=False)
-                users.extend([user] * len(pos_items))
-                items.extend(pos_items)
-
-            train_ratings = [1.0] * len(users)
-            self.train_matrix = csr_matrix((train_ratings, (users, items)), shape=(self.num_users, self.num_items))
-        # drop node
-        if self.mask:
-            users, items = list(), list()
-            if self.mask_ratio < 1.:
-                mask_items = np.random.choice(range(self.num_items), size=int(self.num_items * self.mask_ratio), replace=False)
-                self.mask_items = set(mask_items)
-            else:
-                self.mask_items = set()
-            user_pos_train = self.get_user_train_dict()
-            for user, pos_items in user_pos_train.items():
-                pos_items = set(pos_items) - self.mask_items
-                users.extend([user] * len(pos_items))
-                items.extend(pos_items)
-
-            train_ratings = [1.0] * len(users)
-            self.train_matrix = csr_matrix((train_ratings, (users, items)), shape=(self.num_users, self.num_items))
-        # add edge
-        if self.noisy:
-            users, items = list(), list()
-            user_pos_train = self.get_user_train_dict()
-            all_items = set(range(self.num_items))
-            for user, pos_items in user_pos_train.items():
-                neg_items = list(all_items - set(pos_items))
-                noisy_items = np.random.choice(neg_items, size=int(len(pos_items) * self.noisy_ratio), replace=False)
-                pos_items.extend(noisy_items)
-                users.extend([user] * len(pos_items))
-                items.extend(pos_items)
-            train_ratings = [1.0] * len(users)
-            self.train_matrix = csr_matrix((train_ratings, (users, items)), shape=(self.num_users, self.num_items))
 
         if file_format in {"UIRT", "UIT"}:
             self.time_matrix = csr_matrix((train_data["time"], (train_data["user"], train_data["item"])),
